@@ -4,8 +4,8 @@ using namespace std;
 int MAXPROD;
 
 vector<int> products;
-vector<vector<int> > dp;
-vector<vector<int> > nextBest;
+vector<int> dp;
+vector<int> nextBest;
 
 int numBits(int num){
     int ans = 0;
@@ -15,19 +15,14 @@ int numBits(int num){
     }return ans;
 }
 
-int recurse(int used,int current,int bitprod){
-    bitprod|=products[current];
-    int ans = numBits(bitprod);
-
+int recurse(int used,int bitprod){
     //cout<<used<<" "<<current<<" "<<bitprod<<endl;
 
-    if (used==MAXPROD)return ans;
-    if (dp[current][used]!=-1)return dp[current][used];
-
-    //cout<<"here";
+    if (used==MAXPROD)return 0;
+    if (dp[used]!=-1)return dp[used];
 
     int canuse = MAXPROD&(~used);
-    int val = MAX_INT,producer;
+    int val,producer,nextbitprod;
 
     int returned;
     int willbeused=0;
@@ -41,19 +36,21 @@ int recurse(int used,int current,int bitprod){
 
     bitprod = bitprod&willbeused;
     canuse = MAXPROD&(~used);
+    val = MAX_INT;
 
     while (canuse!=0){
         int nextp = canuse&(-canuse);
         canuse-=nextp;
         producer = log2(nextp);
-        returned = recurse(used|nextp,producer,bitprod);
+        nextbitprod = bitprod|products[producer];
+        returned = max(numBits(nextbitprod),recurse(used|nextp,nextbitprod));
         if (returned<val){
             val = returned;
-            nextBest[current][used] = producer;
+            nextBest[used] = producer;
         }
     }
 
-    return dp[current][used] = max(ans,val);
+    return dp[used] = val;
 }
 
 void setUp(int n,int m){
@@ -62,10 +59,9 @@ void setUp(int n,int m){
     dp.resize(n+1);
     nextBest.resize(n+1);
 
-    for (int i=0;i<n+1;i++){
-        dp[i].assign(MAXPROD,-1);
-        nextBest[i].assign(MAXPROD,-1);
-    }
+    dp.assign(MAXPROD,-1);
+    nextBest.assign(MAXPROD,-1);
+
 }
 
 vector<int> values;
@@ -134,11 +130,11 @@ int main(){
         }
         products[n]=0;
 
-        cout<<recurse(0,n,0)<<endl;
+        cout<<recurse(0,0)<<endl;
 
         int used = 0,current = n;
         while (used!=MAXPROD){
-            current = nextBest[current][used];
+            current = nextBest[used];
             cout<< current << " ";
             used|=(1<<current);
         }
